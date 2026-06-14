@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "project": "synergyctl",
+  "purpose": "Implementation and contract coverage registry",
+  "surfaces": [
+    {
+      "id": "cli-root",
+      "area": "cli",
+      "files": ["src/bin.ts", "src/cli.ts", "src/index.ts", "package.json", "fixtures/cli/help.txt", "fixtures/cli/version.txt"],
+      "notes": "Binary and root command wiring"
+    },
+    {
+      "id": "operation-catalog",
+      "area": "cli-api",
+      "files": ["src/operations.ts"],
+      "notes": "Public v3.17 typed operation surface and guard classes"
+    },
+    {
+      "id": "command-runtime",
+      "area": "cli-api",
+      "files": ["src/commands/register.ts", "tests/core.test.ts"],
+      "notes": "Generic command mounting, raw calls, and dry-run behavior"
+    },
+    {
+      "id": "auth-config",
+      "area": "runtime",
+      "files": ["src/config.ts", "tests/core.test.ts"],
+      "notes": "Auth and config resolution"
+    },
+    {
+      "id": "soap-client",
+      "area": "runtime",
+      "files": ["src/soap-client.ts"],
+      "notes": "SOAP/WSDL client"
+    },
+    {
+      "id": "guardrails",
+      "area": "runtime",
+      "files": ["src/guards.ts", "src/redact.ts", "src/output.ts", "tests/core.test.ts"],
+      "notes": "Write confirmation, redaction, and JSON envelope"
+    },
+    {
+      "id": "domain-dns-tree",
+      "area": "cli-tree",
+      "files": ["src/commands/domain-dns.ts", "tests/domain-dns.test.ts"],
+      "notes": "Domain and DNS command tree scaffold"
+    },
+    {
+      "id": "service-tree",
+      "area": "cli-tree",
+      "files": ["src/commands/services.ts", "tests/services.test.ts"],
+      "notes": "Hosting, SSL, M365, and service command tree scaffold"
+    },
+    {
+      "id": "human-docs",
+      "area": "docs",
+      "files": ["README.md", "docs/license-guidance.md"],
+      "notes": "Human setup, safety, and license guidance"
+    },
+    {
+      "id": "agent-docs",
+      "area": "docs",
+      "files": ["AGENTS.md"],
+      "notes": "Agent operating rules"
+    },
+    {
+      "id": "codex-skill",
+      "area": "skill",
+      "files": ["skills/synergyctl/SKILL.md", "skills/synergyctl/agents/openai.yaml", "skills/synergyctl/references/api-safety.md"],
+      "notes": "Runtime Codex skill"
+    },
+    {
+      "id": "claude-skill",
+      "area": "skill",
+      "files": [".claude/skills/synergyctl/SKILL.md", ".claude/skills/synergyctl/references/api-safety.md"],
+      "notes": "Runtime Claude skill"
+    },
+    {
+      "id": "maintenance-skills",
+      "area": "skill",
+      "files": ["skills/synergyctl-maintenance/SKILL.md", ".claude/skills/synergyctl-maintenance/SKILL.md"],
+      "notes": "Repo maintenance skills"
+    },
+    {
+      "id": "claude-commands",
+      "area": "claude",
+      "files": [".claude/commands/bootstrap.md", ".claude/commands/coverage-audit.md", ".claude/commands/license-audit.md"],
+      "notes": "Claude Code command helpers"
+    },
+    {
+      "id": "fixtures",
+      "area": "fixtures",
+      "files": ["fixtures/coverage/api-surfaces.json", "fixtures/cli/help.txt", "fixtures/cli/version.txt"],
+      "notes": "Machine-readable inventory and CLI snapshots"
+    },
+    {
+      "id": "license-pack",
+      "area": "legal",
+      "files": ["LICENSE", "NOTICE"],
+      "notes": "PolyForm Noncommercial license bundle"
+    },
+    {
+      "id": "ci-validation",
+      "area": "ci",
+      "files": [".github/workflows/ci.yml"],
+      "notes": "Node checks and contract validation"
+    }
+  ]
+}

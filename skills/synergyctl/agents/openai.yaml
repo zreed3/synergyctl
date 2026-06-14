@@ -1,0 +1,4 @@
+interface:
+  display_name: "synergyctl"
+  short_description: "Use Synergy Wholesale safely from CLI"
+  default_prompt: "Use $synergyctl to inspect Synergy Wholesale services safely."

@@ -1,0 +1,229 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke test
+        run: |
+          node dist/bin.js --version
+          node dist/bin.js --json doctor
+          node dist/bin.js --json domains renew example.com.au --years 1 --dry-run
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install YAML support
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Validate docs, skills, fixtures, and license pack
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          root = Path(".")
+          errors: list[str] = []
+
+          required_files = [
+              "README.md",
+              "AGENTS.md",
+              "docs/license-guidance.md",
+              "docs/api-coverage-matrix.md",
+              "fixtures/coverage/api-surfaces.json",
+              "fixtures/cli/help.txt",
+              "fixtures/cli/version.txt",
+              "LICENSE",
+              "NOTICE",
+              "package.json",
+              "src/bin.ts",
+              "src/cli.ts",
+              "src/operations.ts",
+              "src/commands/register.ts",
+              "tests/core.test.ts",
+              "skills/synergyctl/SKILL.md",
+              "skills/synergyctl/agents/openai.yaml",
+              "skills/synergyctl/references/api-safety.md",
+              "skills/synergyctl-maintenance/SKILL.md",
+              "skills/synergyctl-maintenance/agents/openai.yaml",
+              "skills/synergyctl-maintenance/references/repo-contract.md",
+              ".claude/skills/synergyctl/SKILL.md",
+              ".claude/skills/synergyctl/references/api-safety.md",
+              ".claude/skills/synergyctl-maintenance/SKILL.md",
+              ".claude/skills/synergyctl-maintenance/references/repo-contract.md",
+              ".claude/commands/bootstrap.md",
+              ".claude/commands/coverage-audit.md",
+              ".claude/commands/license-audit.md",
+          ]
+
+          for rel in required_files:
+              if not (root / rel).exists():
+                  errors.append(f"missing required file: {rel}")
+
+          def parse_frontmatter(path: Path) -> dict:
+              text = path.read_text()
+              match = re.match(r"^---\n(.*?)\n---\n?", text, re.S)
+              if not match:
+                  raise ValueError(f"{path} is missing YAML frontmatter")
+              data = yaml.safe_load(match.group(1))
+              if not isinstance(data, dict):
+                  raise ValueError(f"{path} frontmatter must be a mapping")
+              return data
+
+          for skill_path in [
+              root / "skills/synergyctl/SKILL.md",
+              root / "skills/synergyctl-maintenance/SKILL.md",
+              root / ".claude/skills/synergyctl/SKILL.md",
+              root / ".claude/skills/synergyctl-maintenance/SKILL.md",
+          ]:
+              try:
+                  frontmatter = parse_frontmatter(skill_path)
+              except Exception as exc:  # noqa: BLE001
+                  errors.append(str(exc))
+                  continue
+
+              for key in ("name", "description"):
+                  if key not in frontmatter:
+                      errors.append(f"{skill_path} missing {key}")
+
+          openai_yaml = yaml.safe_load((root / "skills/synergyctl/agents/openai.yaml").read_text())
+          if not isinstance(openai_yaml, dict):
+              errors.append("skills/synergyctl/agents/openai.yaml must be a mapping")
+          else:
+              interface = openai_yaml.get("interface")
+              if not isinstance(interface, dict):
+                  errors.append("skills/synergyctl/agents/openai.yaml missing interface mapping")
+              else:
+                  for key in ("display_name", "short_description", "default_prompt"):
+                      if key not in interface:
+                          errors.append(f"skills/synergyctl/agents/openai.yaml missing interface.{key}")
+
+          coverage = json.loads((root / "fixtures/coverage/api-surfaces.json").read_text())
+          surfaces = coverage.get("surfaces")
+          if not isinstance(surfaces, list) or not surfaces:
+              errors.append("fixtures/coverage/api-surfaces.json must contain a non-empty surfaces array")
+              surfaces = []
+
+          ids = []
+          for surface in surfaces:
+              if not isinstance(surface, dict):
+                  errors.append("each surface must be an object")
+                  continue
+              surface_id = surface.get("id")
+              if not isinstance(surface_id, str) or not surface_id:
+                  errors.append("each surface needs a string id")
+                  continue
+              ids.append(surface_id)
+              files = surface.get("files", [])
+              if not isinstance(files, list) or not files:
+                  errors.append(f"surface {surface_id} must list at least one file")
+                  continue
+              for rel in files:
+                  if not isinstance(rel, str):
+                      errors.append(f"surface {surface_id} has a non-string file entry")
+                      continue
+                  if not (root / rel).exists():
+                      errors.append(f"surface {surface_id} references missing file: {rel}")
+
+          if len(ids) != len(set(ids)):
+              errors.append("coverage surface ids must be unique")
+
+          matrix_text = (root / "docs/api-coverage-matrix.md").read_text()
+          matrix_ids = []
+          for line in matrix_text.splitlines():
+              if not line.startswith("|"):
+                  continue
+              if line.startswith("| ---"):
+                  continue
+              cells = [cell.strip() for cell in line.strip().split("|")[1:-1]]
+              if len(cells) == 5 and cells[0] != "ID":
+                  matrix_ids.append(cells[0])
+
+          if set(matrix_ids) != set(ids):
+              missing_in_matrix = sorted(set(ids) - set(matrix_ids))
+              extra_in_matrix = sorted(set(matrix_ids) - set(ids))
+              if missing_in_matrix:
+                  errors.append("missing matrix ids: " + ", ".join(missing_in_matrix))
+              if extra_in_matrix:
+                  errors.append("extra matrix ids: " + ", ".join(extra_in_matrix))
+
+          license_text = (root / "LICENSE").read_text()
+          notice_text = (root / "NOTICE").read_text()
+          required_license_bits = [
+              "PolyForm Noncommercial License 1.0.0",
+              "https://polyformproject.org/licenses/noncommercial/1.0.0",
+              "Otterblock Pty Ltd ABN 91 614 672 794 / ACN 614 672 794",
+              "All rights reserved.",
+          ]
+          for needle in required_license_bits:
+              if needle not in license_text:
+                  errors.append(f"LICENSE missing required text: {needle}")
+          if "Required Notice: Copyright Otterblock Pty Ltd ABN 91 614 672 794 / ACN 614 672 794. All rights reserved." not in notice_text:
+              errors.append("NOTICE missing required project notice")
+          if "PolyForm Noncommercial 1.0.0" not in notice_text:
+              errors.append("NOTICE missing PolyForm reference")
+
+          secret_patterns = [
+              re.compile(r"SYNERGY_API_KEY=['\"]?[A-Za-z0-9_./+=-]{24,}"),
+              re.compile(r"apiKey\s*=\s*['\"][A-Za-z0-9_./+=-]{24,}['\"]"),
+          ]
+          for path in root.rglob("*"):
+              if path.is_dir() or ".git" in path.parts or "node_modules" in path.parts or "dist" in path.parts:
+                  continue
+              try:
+                  text = path.read_text(errors="ignore")
+              except Exception:
+                  continue
+              for pattern in secret_patterns:
+                  if pattern.search(text):
+                      errors.append(f"possible committed secret in {path}: {pattern.pattern}")
+
+          if errors:
+              for error in errors:
+                  print(error, file=sys.stderr)
+              raise SystemExit(1)
+
+          print("contract validation passed")
+          PY

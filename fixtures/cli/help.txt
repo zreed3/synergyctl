@@ -1,0 +1,28 @@
+Usage: synergyctl [options] [command]
+
+Guardrailed CLI for the Synergy Wholesale SOAP API.
+
+Options:
+  -V, --version       output the version number
+  --json              Emit stable JSON to stdout.
+  --config <path>     Config TOML path.
+  --reseller-id <id>  One-off Synergy reseller ID.
+  --api-key <key>     One-off Synergy API key.
+  --api-url <url>     Override Synergy API base URL.
+  --include-secrets   Allow secret fields in output for commands that can return
+                      them.
+  -h, --help          display help for command
+
+Commands:
+  doctor              Verify config, auth presence, and WSDL reachability
+                      without requiring credentials.
+  init [options]      Write ~/.config/synergyctl/config.toml for normal CLI use.
+  operations          Inspect documented typed operations.
+  request             Raw SOAP escape hatch.
+  account
+  domains
+  dns
+  hosting
+  ssl
+  m365
+  help [command]      display help for command

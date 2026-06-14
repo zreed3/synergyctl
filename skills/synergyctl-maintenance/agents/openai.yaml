@@ -1,0 +1,6 @@
+interface:
+  display_name: "synergyctl maintenance"
+  short_description: "Maintain synergyctl docs and contract artifacts"
+  default_prompt: "Use $synergyctl-maintenance to keep the synergyctl docs, skills, fixtures, CI, and coverage artifacts aligned."
+policy:
+  allow_implicit_invocation: true
