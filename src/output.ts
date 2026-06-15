@@ -41,7 +41,7 @@ export function printResult(
 }
 
 export function printError(error: unknown, mode: OutputMode): void {
-  const shaped = errorShape(error);
+  const shaped = redact(errorShape(error)) as CommandErrorShape;
   if (mode === "json") {
     process.stdout.write(`${JSON.stringify(shaped, null, 2)}\n`);
   } else {

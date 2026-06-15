@@ -47,9 +47,23 @@ function maskContact(value: unknown): unknown {
   return `${value.slice(0, 2)}***${value.slice(-2)}`;
 }
 
+function redactString(value: string, includeSecrets: boolean): string {
+  if (includeSecrets) {
+    return value;
+  }
+  return value
+    .replace(/(<(?:[^:>]+:)?apiKey[^>]*>)([^<]*)(<\/(?:[^:>]+:)?apiKey>)/gi, "$1[redacted]$3")
+    .replace(/("apiKey"\s*:\s*")([^"]*)(")/gi, "$1[redacted]$3")
+    .replace(/(apiKey\s*=\s*["'])([^"']*)(["'])/gi, "$1[redacted]$3")
+    .replace(/(SYNERGY_API_KEY=)([^\s]+)/g, "$1[redacted]");
+}
+
 export function redact(value: unknown, includeSecrets = false): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => redact(item, includeSecrets));
+  }
+  if (typeof value === "string") {
+    return redactString(value, includeSecrets);
   }
   if (!isPlainObject(value)) {
     return value;

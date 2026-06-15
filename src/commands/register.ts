@@ -109,8 +109,18 @@ function responseStatus(response: unknown): string | undefined {
   if (!response || typeof response !== "object") {
     return undefined;
   }
-  const status = (response as Record<string, unknown>).status;
-  return typeof status === "string" ? status : undefined;
+  const record = response as Record<string, unknown>;
+  const status = record.status;
+  if (typeof status === "string") {
+    return status;
+  }
+  if (status && typeof status === "object") {
+    const value = (status as Record<string, unknown>).$value;
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+  return responseStatus(record.return);
 }
 
 function isApiErrorStatus(status: string | undefined): boolean {
@@ -258,7 +268,14 @@ export async function runRawOperation(
   }
   const invoker = registerOptions.invokerFactory?.(config) ?? new SynergySoapClient(config);
   const response = await invoker.call(operation, withAuth(config, payload));
-  return success({ operation, response }, { raw: true, documented: PUBLIC_OPERATION_NAMES.has(operation) });
+  const status = responseStatus(response);
+  if (isApiErrorStatus(status)) {
+    throw new SynergyctlError(status ?? "ERR_API", `Synergy API returned ${status}`, {
+      operation,
+      details: response
+    });
+  }
+  return success({ operation, status, response }, { raw: true, documented: PUBLIC_OPERATION_NAMES.has(operation) });
 }
 
 export function describeOperations(): unknown {

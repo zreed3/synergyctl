@@ -29,8 +29,8 @@ export class SynergySoapClient implements SoapInvoker {
       });
     }
     try {
-      const result = (await method.call(client, payload)) as unknown[];
-      return Array.isArray(result) && result.length === 1 ? result[0] : result;
+      const result = (await method.call(client, { request: payload })) as unknown[];
+      return Array.isArray(result) ? result[0] : result;
     } catch (error) {
       throw new SynergyctlError("ERR_SOAP_REQUEST", `SOAP request failed for ${operation}`, {
         operation,

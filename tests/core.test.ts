@@ -45,12 +45,16 @@ describe("redaction", () => {
     expect(
       redact({
         apiKey: "secret",
+        rawXml: "<apiKey>secret</apiKey>",
+        rawJson: '{"apiKey":"secret"}',
         auth: { apiKey: { available: false, source: "missing" } },
         domainPassword: "epp",
         contacts: { email: "person@example.com", phone: "+61.390245383" }
       })
     ).toEqual({
       apiKey: "[redacted]",
+      rawXml: "<apiKey>[redacted]</apiKey>",
+      rawJson: '{"apiKey":"[redacted]"}',
       auth: { apiKey: { available: false, source: "missing" } },
       domainPassword: "[redacted]",
       contacts: { email: "p***@example.com", phone: "+6***83" }
