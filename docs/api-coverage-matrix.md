@@ -15,7 +15,7 @@
 | codex-skill | Skill | `skills/synergyctl/SKILL.md`, `skills/synergyctl/agents/openai.yaml` | skill validator | Runtime Codex skill for safe CLI use |
 | claude-skill | Skill | `.claude/skills/synergyctl/SKILL.md` | CI contract validation | Portable Claude skill for safe CLI use |
 | maintenance-skills | Skill | `skills/synergyctl-maintenance/SKILL.md`, `.claude/skills/synergyctl-maintenance/SKILL.md` | CI contract validation | Repo contract maintenance guidance |
-| claude-commands | Claude | `.claude/commands/*.md` | CI contract validation | Bootstrap, coverage audit, and license audit commands |
+| claude-commands | Claude | `.claude/commands/*.md` | CI contract validation | Bootstrap, coverage audit, license audit, and feature parity ADG audit commands |
 | fixtures | Fixtures | `fixtures/coverage/api-surfaces.json`, `fixtures/cli/*` | CI contract validation | Machine-readable surface inventory and snapshots |
 | license-pack | Legal | `LICENSE`, `NOTICE` | CI contract validation | PolyForm Noncommercial and Otterblock notice |
 | ci-validation | CI | `.github/workflows/ci.yml` | GitHub Actions | Node checks plus contract validation |

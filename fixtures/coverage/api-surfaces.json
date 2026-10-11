@@ -84,7 +84,7 @@
     {
       "id": "claude-commands",
       "area": "claude",
-      "files": [".claude/commands/bootstrap.md", ".claude/commands/coverage-audit.md", ".claude/commands/license-audit.md"],
+      "files": [".claude/commands/bootstrap.md", ".claude/commands/coverage-audit.md", ".claude/commands/feature-parity-adg.md", ".claude/commands/license-audit.md"],
       "notes": "Claude Code command helpers"
     },
     {
